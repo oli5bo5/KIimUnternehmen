@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KI-Einsatz Bewertung</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .question { margin-bottom: 20px; }
+        button { display: block; width: 100%; margin-bottom: 10px; padding: 10px; background-color: #f0f0f0; border: none; cursor: pointer; }
+        button:hover { background-color: #e0e0e0; }
+        #result { margin-top: 20px; font-weight: bold; }
+        #chart { max-width: 300px; margin: 20px auto; }
+    </style>
+</head>
+<body>
+    <h1>KI-Einsatz Bewertung</h1>
+    <p>Willkommen zur Bewertung des KI Einsatzes in deinem Unternehmen. Bitte beantworten Sie die folgenden 10 Fragen.</p>
+    
+    <div id="quiz"></div>
+    <div id="result" style="display: none;"></div>
+    <canvas id="chart" style="display: none;"></canvas>
+
+    <script>
+        const questions = [
+            {
+                text: "Wie würden Sie den aktuellen KI-Einsatz in Ihrem Unternehmen beschreiben?",
+                options: [
+                    { text: "Keine Nutzung", score: 0 },
+                    { text: "Erste Experimente", score: 1 },
+                    { text: "Einzelne Projekte", score: 2 },
+                    { text: "Breiter Einsatz", score: 3 },
+                    { text: "Kernbestandteil unserer Strategie", score: 4 }
+                ]
+            },
+            {
+                text: "Wie ausgeprägt ist das KI-Fachwissen in Ihrem Unternehmen?",
+                options: [
+                    { text: "Nicht vorhanden", score: 0 },
+                    { text: "Grundkenntnisse", score: 1 },
+                    { text: "Fortgeschritten", score: 2 },
+                    { text: "Expertenwissen", score: 3 },
+                    { text: "Führend in der Branche", score: 4 }
+                ]
+            },
+            {
+                text: "Wie stark ist KI in Ihre Geschäftsprozesse integriert?",
+                options: [
+                    { text: "Gar nicht", score: 0 },
+                    { text: "Minimal", score: 1 },
+                    { text: "Teilweise", score: 2 },
+                    { text: "Weitgehend", score: 3 },
+                    { text: "Vollständig", score: 4 }
+                ]
+            },
+            {
+                text: "Wie hoch ist das Budget für KI-Investitionen in Ihrem Unternehmen?",
+                options: [
+                    { text: "Kein Budget", score: 0 },
+                    { text: "Geringes Budget", score: 1 },
+                    { text: "Mittleres Budget", score: 2 },
+                    { text: "Hohes Budget", score: 3 },
+                    { text: "Sehr hohes Budget", score: 4 }
+                ]
+            },
+            {
+                text: "Wie ausgeprägt ist die KI-Strategie in Ihrem Unternehmen?",
+                options: [
+                    { text: "Keine Strategie", score: 0 },
+                    { text: "In Planung", score: 1 },
+                    { text: "Teilweise umgesetzt", score: 2 },
+                    { text: "Vollständig umgesetzt", score: 3 },
+                    { text: "Kontinuierlich optimiert", score: 4 }
+                ]
+            },
+            {
+                text: "Wie bewerten Sie die Datenverfügbarkeit und -qualität für KI-Anwendungen?",
+                options: [
+                    { text: "Sehr schlecht", score: 0 },
+                    { text: "Schlecht", score: 1 },
+                    { text: "Mittelmäßig", score: 2 },
+                    { text: "Gut", score: 3 },
+                    { text: "Sehr gut", score: 4 }
+                ]
+            },
+            {
+                text: "Wie stark ist die Unterstützung des Top-Managements für KI-Initiativen?",
+                options: [
+                    { text: "Keine Unterstützung", score: 0 },
+                    { text: "Geringe Unterstützung", score: 1 },
+                    { text: "Mittlere Unterstützung", score: 2 },
+                    { text: "Starke Unterstützung", score: 3 },
+                    { text: "Volle Unterstützung", score: 4 }
+                ]
+            },
+            {
+                text: "Wie ausgeprägt ist die KI-Ethik und -Governance in Ihrem Unternehmen?",
+                options: [
+                    { text: "Nicht vorhanden", score: 0 },
+                    { text: "In Planung", score: 1 },
+                    { text: "Teilweise umgesetzt", score: 2 },
+                    { text: "Vollständig umgesetzt", score: 3 },
+                    { text: "Branchenführend", score: 4 }
+                ]
+            },
+            {
+                text: "Wie hoch ist die Bereitschaft der Mitarbeiter, mit KI-Technologien zu arbeiten?",
+                options: [
+                    { text: "Sehr gering", score: 0 },
+                    { text: "Gering", score: 1 },
+                    { text: "Mittel", score: 2 },
+                    { text: "Hoch", score: 3 },
+                    { text: "Sehr hoch", score: 4 }
+                ]
+            },
+            {
+                text: "Wie bewerten Sie die technische Infrastruktur für KI in Ihrem Unternehmen?",
+                options: [
+                    { text: "Nicht vorhanden", score: 0 },
+                    { text: "Unzureichend", score: 1 },
+                    { text: "Ausreichend", score: 2 },
+                    { text: "Gut", score: 3 },
+                    { text: "Hervorragend", score: 4 }
+                ]
+            }
+        ];
+
+        let currentQuestion = 0;
+        let scores = [];
+
+        function displayQuestion() {
+            const quizContainer = document.getElementById('quiz');
+            const question = questions[currentQuestion];
+            
+            let questionHtml = `<div class="question"><h2>${question.text}</h2>`;
+            question.options.forEach((option, index) => {
+                questionHtml += `<button onclick="selectOption(${option.score})">${option.text}</button>`;
+            });
+            questionHtml += '</div>';
+            
+            quizContainer.innerHTML = questionHtml;
+        }
+
+        function selectOption(score) {
+            scores.push(score);
+            currentQuestion++;
+            
+            if (currentQuestion < questions.length) {
+                displayQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            const resultContainer = document.getElementById('result');
+            const chartContainer = document.getElementById('chart');
+            const quizContainer = document.getElementById('quiz');
+            
+            quizContainer.style.display = 'none';
+            resultContainer.style.display = 'block';
+            chartContainer.style.display = 'block';
+
+            const totalScore = scores.reduce((sum, score) => sum + score, 0);
+            let result;
+            
+            if (scores.filter(score => score >= 3).length >= 8) {
+                result = { color: "green", text: "Grün: Ihr Unternehmen hat KI gut integriert." };
+            } else if (scores.filter(score => score >= 3).length >= 6) {
+                result = { color: "yellow", text: "Gelb: Sie können von einem KI-Chatbot profitieren." };
+            } else {
+                result = { color: "red", text: "Rot: Sie benötigen dringend eine KI-Beratung." };
+            }
+
+            resultContainer.innerHTML = `<p style="color: black;">${result.text}</p>`;
+
+            const ctx = chartContainer.getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Rot', 'Gelb', 'Grün'],
+                    datasets: [{
+                        data: [
+                            scores.filter(score => score < 2).length,
+                            scores.filter(score => score === 2).length,
+                            scores.filter(score => score > 2).length
+                        ],
+                        backgroundColor: ['#FF0000', '#FFFF00', '#00FF00']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Verteilung der Antworten'
+                        }
+                    }
+                }
+            });
+        }
+
+        displayQuestion();
+    </script>
+</body>
+</html>
